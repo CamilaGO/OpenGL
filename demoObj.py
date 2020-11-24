@@ -18,15 +18,20 @@ layout (location = 2) in vec2 texcoords;
 
 uniform mat4 theMatrix;
 uniform vec3 light;
+uniform float time;
 
 out float intensity;
 out vec2 vertexTexcoords;
 out vec3 v3Position;
+out vec3 fnormal;
+out float ftime;
 
 void main()
 {
+	fnormal = normal;
 	vertexTexcoords = texcoords;
 	v3Position = position;
+	ftime = time;
 	intensity = dot(normal, normalize(light));
 	gl_Position = theMatrix * vec4(position.x, position.y, position.z, 1.0);
 }
@@ -50,7 +55,25 @@ void main()
 }
 """
 
-otro_shader = """
+psycho_shader = """
+#version 460
+layout(location = 0) out vec4 fragColor;
+
+in float intensity;
+in vec2 vertexTexcoords;
+in vec3 fnormal;
+
+uniform sampler2D tex;
+uniform vec4 diffuse;
+uniform vec4 ambient;
+
+void main()
+{
+	fragColor = vec4(fnormal, 1.1);
+}
+"""
+
+cola_shader = """
 #version 460
 layout(location = 0) out vec4 fragColor;
 
@@ -65,7 +88,59 @@ uniform vec4 ambient;
 void main()
 {
 	float bright = floor(mod(v3Position.x*10.0, 2.0)+.2) + floor(mod(v3Position.y*1.0, 1.0)+.5) + floor(mod(v3Position.z*0.0, 10.0)+.5);
-  	fragColor = mod(bright, 6.0) > .8 ? vec4(1.0, 0.0, 0.0, 9.0) : vec4(4.0, 0.0, 2.0, 0.5);
+  	fragColor = mod(bright, 6.0) > .8 ? vec4(1.0, 0.0, 0.0, 9.0) : vec4(1.0, 3.0, 2.0, 0.5);
+}
+"""
+
+timer_shader = """
+#version 460
+layout(location = 0) out vec4 fragColor;
+
+in float intensity;
+in vec2 vertexTexcoords;
+in vec3 v3Position;
+in float ftime;
+
+uniform sampler2D tex;
+uniform vec4 diffuse;
+uniform vec4 ambient;
+
+void main()
+{
+	float tiempo = ftime*15.5;
+	float bright = floor(mod(v3Position.z*tiempo, 0.5)+ftime) + floor(mod(v3Position.y*tiempo, 0.5)+ftime) + floor(mod(v3Position.x*ftime, 25.0));
+    vec4 color = mod(bright, 2.0) > .8 ? vec4(0.0, 1.5, 1.5, 9.0) : vec4(10.0, 0.0, 0.0, 0.0);
+  	fragColor = color * intensity;
+}
+"""
+
+party_shader = """
+#version 460
+layout(location = 0) out vec4 fragColor;
+
+in float intensity;
+in vec2 vertexTexcoords;
+in vec3 v3Position;
+in float ftime;
+in vec3 fnormal;
+
+uniform sampler2D tex;
+uniform vec4 diffuse;
+uniform vec4 ambient;
+
+void main()
+{
+	float theta = ftime*20.0;
+  
+	vec3 dir1 = vec3(cos(theta),0,sin(theta)); 
+	vec3 dir2 = vec3(sin(theta),0,cos(theta));
+  
+	float diffuse1 = pow(dot(fnormal,dir1),2.0);
+	float diffuse2 = pow(dot(fnormal,dir2),2.0);
+		
+	vec3 col1 = diffuse1 * vec3(1,0,0);
+	vec3 col2 = diffuse2 * vec3(0,0,1);
+    gl_FragColor = vec4(col1 + col2, 1.0);
 }
 """
 
@@ -75,7 +150,7 @@ shader = compileProgram(
 )
 
 
-scene = pyassimp.load('./fox.obj')
+scene = pyassimp.load('./tiger.obj')
 
 def getTexture(name):
 	textName = './' + name + '.jpg'
@@ -157,15 +232,15 @@ def glize(node):
 
 
 camera = glm.vec3(0,0,200)
-camera_speed = 5
+camera_speed = 20
 
 
 i = glm.mat4()
 
 def createTheMatrix(counter, camera):
-	translate = glm.translate(i, glm.vec3(0,-50,0))
+	translate = glm.translate(i, glm.vec3(0,0,0))
 	rotate = glm.rotate(i, glm.radians(counter), glm.vec3(0,1,0))
-	scale = glm.scale(i, glm.vec3(0.8,0.8,0.8))
+	scale = glm.scale(i, glm.vec3(0.25,0.25,0.25))
 
 	model = translate * rotate * scale
 	view = glm.lookAt(camera, glm.vec3(0,0,0), glm.vec3(0,1,0))
@@ -180,6 +255,7 @@ glEnable(GL_DEPTH_TEST)
 paused = False
 running = True
 counter = 0
+timeshader = 0
 while running:
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 	glClearColor(0.58, 0.58, 0.58, 1.0)
@@ -196,6 +272,13 @@ while running:
 	1, # count
 	GL_FALSE, 
 	glm.value_ptr(theMatrix)
+	)
+
+	timeshader += 0.01
+
+	glUniform1f(
+		glGetUniformLocation(shader, 'time'),
+		timeshader
 	)
 
 	# glDrawArrays(GL_TRIANGLES, 0, 3)
@@ -228,6 +311,8 @@ while running:
 				getTexture("panther")
 			if event.key == pygame.K_o:
 				getTexture("wolf")
+			if event.key == pygame.K_s:
+				getTexture("wtiger")
 			if event.key == pygame.K_a:
 				shader = compileProgram(
 						compileShader(vertex_shader, GL_VERTEX_SHADER),
@@ -237,7 +322,25 @@ while running:
 			if event.key == pygame.K_b:
 				shader = compileProgram(
 						compileShader(vertex_shader, GL_VERTEX_SHADER),
-						compileShader(otro_shader, GL_FRAGMENT_SHADER)
+						compileShader(psycho_shader, GL_FRAGMENT_SHADER)
+				)
+				glUseProgram(shader)
+			if event.key == pygame.K_c:
+				shader = compileProgram(
+						compileShader(vertex_shader, GL_VERTEX_SHADER),
+						compileShader(cola_shader, GL_FRAGMENT_SHADER)
+				)
+				glUseProgram(shader)
+			if event.key == pygame.K_z:
+				shader = compileProgram(
+						compileShader(vertex_shader, GL_VERTEX_SHADER),
+						compileShader(timer_shader, GL_FRAGMENT_SHADER)
+				)
+				glUseProgram(shader)
+			if event.key == pygame.K_x:
+				shader = compileProgram(
+						compileShader(vertex_shader, GL_VERTEX_SHADER),
+						compileShader(party_shader, GL_FRAGMENT_SHADER)
 				)
 				glUseProgram(shader)
 			if event.key == pygame.K_SPACE:
