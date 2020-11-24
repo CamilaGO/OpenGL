@@ -77,29 +77,33 @@ shader = compileProgram(
 
 scene = pyassimp.load('./fox.obj')
 
-texture_surface = pygame.image.load('./tiger.jpg')
-texture_data = pygame.image.tostring(texture_surface, 'RGB')
-width = texture_surface.get_width()
-height = texture_surface.get_height()
+def getTexture(name):
+	textName = './' + name + '.jpg'
+	texture_surface = pygame.image.load(textName)
+	texture_data = pygame.image.tostring(texture_surface, 'RGB')
+	width = texture_surface.get_width()
+	height = texture_surface.get_height()
 
-view = glm.mat4(1)
-projection = glm.perspective(glm.radians(45),800/600,0.1,1000.0)
-model = glm.mat4(1)
+	view = glm.mat4(1)
+	projection = glm.perspective(glm.radians(45),800/600,0.1,1000.0)
+	model = glm.mat4(1)
 
-texture = glGenTextures(1)
-glBindTexture(GL_TEXTURE_2D, texture)
-glTexImage2D(
-	GL_TEXTURE_2D,
-	0,
-	GL_RGB,
-	width,
-	height,
-	0,
-	GL_RGB,
-	GL_UNSIGNED_BYTE,
-	texture_data
-)
-glGenerateMipmap(GL_TEXTURE_2D)
+	texture = glGenTextures(1)
+	glBindTexture(GL_TEXTURE_2D, texture)
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		GL_RGB,
+		width,
+		height,
+		0,
+		GL_RGB,
+		GL_UNSIGNED_BYTE,
+		texture_data
+	)
+	glGenerateMipmap(GL_TEXTURE_2D)
+
+getTexture("tiger")
 
 def glize(node):
 	# render
@@ -196,7 +200,6 @@ while running:
 
 	# glDrawArrays(GL_TRIANGLES, 0, 3)
 	# glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, None)
-	
 	glize(scene.rootnode)
 
 	pygame.display.flip()
@@ -217,6 +220,14 @@ while running:
 				camera.y -= camera_speed
 			if event.key == pygame.K_DOWN:
 				camera.y += camera_speed
+			if event.key == pygame.K_l:
+				getTexture("leopardo")
+			if event.key == pygame.K_t:
+				getTexture("tiger")
+			if event.key == pygame.K_p:
+				getTexture("panther")
+			if event.key == pygame.K_o:
+				getTexture("wolf")
 			if event.key == pygame.K_a:
 				shader = compileProgram(
 						compileShader(vertex_shader, GL_VERTEX_SHADER),
