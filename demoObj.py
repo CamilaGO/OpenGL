@@ -152,6 +152,10 @@ shader = compileProgram(
 
 scene = pyassimp.load('./tiger.obj')
 
+pygame.mixer.music.load('./TigerEye.mp3')
+pygame.mixer.music.set_volume(0.8)
+pygame.mixer.music.play(0)
+
 def getTexture(name):
 	textName = './' + name + '.jpg'
 	texture_surface = pygame.image.load(textName)
@@ -286,7 +290,7 @@ while running:
 	glize(scene.rootnode)
 
 	pygame.display.flip()
-
+	
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
@@ -331,6 +335,9 @@ while running:
 						compileShader(cola_shader, GL_FRAGMENT_SHADER)
 				)
 				glUseProgram(shader)
+				pygame.mixer.music.load('./cocaSong.mp3')
+				pygame.mixer.music.set_volume(0.8)
+				pygame.mixer.music.play(0)
 			if event.key == pygame.K_z:
 				shader = compileProgram(
 						compileShader(vertex_shader, GL_VERTEX_SHADER),
@@ -343,6 +350,9 @@ while running:
 						compileShader(party_shader, GL_FRAGMENT_SHADER)
 				)
 				glUseProgram(shader)
+				pygame.mixer.music.load('./partyRock.mp3')
+				pygame.mixer.music.set_volume(0.8)
+				pygame.mixer.music.play(0)
 			if event.key == pygame.K_SPACE:
 				paused = not paused
 
